@@ -85,14 +85,11 @@ http://127.0.0.1:5000
 ## ⚠️ Notes
 
 * Make sure Python 3.8+ is installed
-* Do not upload `venv`, `.idea`, or data files
-* Large ML models should be handled separately
-
 ---
 
 ## 👨‍💻 Author
 
-Your Name
+Sainadh
 
 ---
 
