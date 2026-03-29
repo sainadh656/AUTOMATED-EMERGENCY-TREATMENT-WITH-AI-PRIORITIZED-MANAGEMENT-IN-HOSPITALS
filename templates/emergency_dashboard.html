@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>AI Autonomous Emergency Dashboard</title>
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box;font-family:"Poppins",sans-serif;}
+body{display:flex;height:100vh;background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);color:white;}
+
+/* LEFT PANEL */
+#left{width:350px;padding:25px;backdrop-filter:blur(12px);background:rgba(255,255,255,0.08);border-right:1px solid rgba(255,255,255,0.2);overflow:auto;}
+#left h2{font-weight:600;margin-bottom:20px;color:#ff6b6b;}
+#left h3{margin-top:25px;margin-bottom:10px;color:#ffb3b3;}
+input{width:100%;padding:12px;margin-bottom:12px;border:none;border-radius:8px;background:rgba(255,255,255,0.15);color:white;font-size:14px;}
+input::placeholder{color:#ddd;}
+button{width:100%;padding:14px;border:none;border-radius:10px;background:linear-gradient(45deg,#ff4b2b,#ff416c);color:white;font-size:15px;font-weight:500;cursor:pointer;transition:0.3s;}
+button:hover{transform:scale(1.04);box-shadow:0 5px 20px rgba(255,65,108,0.5);}
+pre{background:rgba(0,0,0,0.35);padding:15px;border-radius:10px;font-size:13px;overflow:auto;}
+
+/* MAP AREA */
+#right{flex:1;position:relative;}
+#map{height:100%;width:100%;}
+#mapHeader{position:absolute;top:20px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.6);padding:10px 25px;border-radius:25px;font-size:18px;font-weight:500;z-index:1000;}
+#backBtn{position:absolute;top:20px;left:20px;background:rgba(0,0,0,0.6);padding:10px 18px;border-radius:25px;font-size:14px;cursor:pointer;z-index:1000;border:1px solid rgba(255,255,255,0.3);transition:0.3s;}
+#backBtn:hover{background:#ff416c;transform:scale(1.05);}
+@media(max-width:900px){body{flex-direction:column;}#left{width:100%;height:40%;}#right{height:60%;}}
+</style>
+</head>
+
+<body>
+
+<!-- LEFT PANEL -->
+<div id="left">
+<h2>🚨 Emergency Panel</h2>
+
+<input type="text" id="patient_name" placeholder="Patient Name">
+<input type="text" id="mobile" placeholder="Mobile Number">
+<input type="text" id="lat" placeholder="Latitude">
+<input type="text" id="lng" placeholder="Longitude">
+<input type="number" id="heart_rate" placeholder="Heart Rate" value="120">
+<input type="number" id="spo2" placeholder="SpO2 %" value="90">
+
+<button onclick="submitEmergency()">🚑 Dispatch Emergency</button>
+
+<h3>AI Response</h3>
+<pre id="response">Waiting for emergency...</pre>
+</div>
+
+<!-- MAP AREA -->
+<div id="right">
+<div id="backBtn" onclick="goHome()">⬅ Back to Home</div>
+<div id="mapHeader">AI Emergency Response Map</div>
+<div id="map"></div>
+</div>
+
+<script>
+// --------------------------
+// Initialize Map
+// --------------------------
+var map = L.map('map').setView([17.3850,78.4867],13);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
+
+var hospMarkers = {};
+var ambMarkers = {};
+var doctorMarkers = {};
+var patientMarker = null;
+var routeLine = null;
+
+// --------------------------
+// Icons
+// --------------------------
+var hospitalIcon = L.icon({iconUrl:"https://cdn-icons-png.flaticon.com/512/1484/1484913.png",iconSize:[32,32]});
+var ambulanceIcon = L.icon({iconUrl:"https://cdn-icons-png.flaticon.com/512/2965/2965567.png",iconSize:[32,32]});
+var doctorIcon = L.icon({iconUrl:"https://cdn-icons-png.flaticon.com/512/3774/3774299.png",iconSize:[28,28]});
+
+// --------------------------
+// Detect Location
+// --------------------------
+navigator.geolocation.getCurrentPosition(function(position){
+    let lat = position.coords.latitude;
+    let lng = position.coords.longitude;
+
+    document.getElementById("lat").value = lat;
+    document.getElementById("lng").value = lng;
+
+    map.setView([lat,lng],14);
+
+    fetch("/init_system",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({lat:lat,lng:lng})
+    })
+    .then(r=>r.json())
+    .then(data=>{
+        loadHospitals(data.hospitals);
+        loadAmbulances(data.ambulances);
+        loadDoctors(data.doctors);
+    });
+});
+
+// --------------------------
+// Load Markers
+// --------------------------
+function loadHospitals(data){
+    for(let h in data){
+        let loc = data[h];
+        hospMarkers[h] = L.marker([loc.lat,loc.lng],{icon:hospitalIcon}).addTo(map).bindPopup("<b>"+h+"</b>");
+    }
+}
+function loadAmbulances(data){
+    for(let a in data){
+        let loc = data[a];
+        ambMarkers[a] = L.marker([loc.lat,loc.lng],{icon:ambulanceIcon}).addTo(map).bindPopup("<b>"+a+"</b><br>Status:"+loc.status);
+    }
+}
+function loadDoctors(data){
+    for(let d in data){
+        let doc = data[d];
+        doctorMarkers[d] = L.marker([doc.lat,doc.lng],{icon:doctorIcon}).addTo(map)
+        .bindPopup("<b>"+d+"</b><br>Specialization:"+doc.specialization+"<br>Hospital:"+doc.hospital);
+    }
+}
+
+// --------------------------
+// Update Ambulances
+// --------------------------
+function updateAmbulances(){
+    fetch("/get_ambulances")
+    .then(r=>r.json())
+    .then(data=>{
+        for(let a in data){
+            let loc = data[a];
+            if(ambMarkers[a]) ambMarkers[a].setLatLng([loc.lat,loc.lng]);
+        }
+    });
+}
+setInterval(updateAmbulances,2000);
+
+// --------------------------
+// Submit Emergency
+// --------------------------
+function submitEmergency(){
+    let patient_name = document.getElementById("patient_name").value;
+    let mobile = document.getElementById("mobile").value;
+    let lat = parseFloat(document.getElementById("lat").value);
+    let lng = parseFloat(document.getElementById("lng").value);
+    let heart = parseInt(document.getElementById("heart_rate").value);
+    let spo2 = parseInt(document.getElementById("spo2").value);
+
+    fetch("/report_emergency", {
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({
+            patient_name, mobile, lat, lng, heart_rate:heart, spo2
+        })
+    })
+    .then(r => r.json())
+    .then(res => {
+        document.getElementById("response").innerText = JSON.stringify(res,null,2);
+
+        if(patientMarker) map.removeLayer(patientMarker);
+        if(routeLine) map.removeLayer(routeLine);
+
+        let color = (res.severity == "Critical") ? "red" : "orange";
+
+        patientMarker = L.circleMarker([lat,lng],{
+            radius:10,
+            color:color,
+            fillColor:color,
+            fillOpacity:0.8
+        }).addTo(map)
+        .bindPopup(
+            "<b>Patient</b><br>"+
+            "Name:"+patient_name+"<br>"+
+            "Mobile:"+mobile+"<br>"+
+            "Heart Rate:"+heart+"<br>"+
+            "SpO2:"+spo2+"<br>"+
+            "Severity:"+res.severity+"<br>"+
+            "Ambulance:"+res.ambulance+"<br>"+
+            "Hospital:"+res.hospital
+        ).openPopup();
+
+        let ambLoc = ambMarkers[res.ambulance].getLatLng();
+        let hospLoc = hospMarkers[res.hospital].getLatLng();
+
+        routeLine = L.polyline([ambLoc, patientMarker.getLatLng(), hospLoc],{
+            color:"blue",
+            weight:4,
+            dashArray:"5,10"
+        }).addTo(map);
+
+        map.fitBounds(routeLine.getBounds().pad(0.5));
+    });
+}
+
+// --------------------------
+// Back Button
+// --------------------------
+function goHome(){ window.location.href="/appointments"; }
+
+</script>
+</body>
+</html>

@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>A  Machine Learning–Driven Multimodal Authentication Framework </title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+    <style>
+        /* =========================
+           GLOBAL STYLES
+        ========================== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow-x: hidden;
+        }
+
+        body {
+            position: relative;
+            background: #0f172a;
+            color: white;
+        }
+
+        /* =========================
+           BIOMETRIC BACKGROUND ANIMATION
+        ========================== */
+        #biometric-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        /* =========================
+           NAVBAR (GLASSMORPHISM)
+        ========================== */
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 60px;
+            backdrop-filter: blur(12px);
+            background: rgba(255, 255, 255, 0.08);
+            border-bottom: 1px solid rgba(255,255,255,0.15);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        nav h1 {
+            font-size: 22px;
+            font-weight: 600;
+        }
+
+        nav ul {
+            list-style: none;
+            display: flex;
+            gap: 35px;
+        }
+
+        nav ul li {
+            cursor: pointer;
+            position: relative;
+            opacity: 0.85;
+        }
+
+        nav ul li::after {
+            content: "";
+            position: absolute;
+            left: 0;
+            bottom: -6px;
+            width: 0%;
+            height: 2px;
+            background: #60a5fa;
+            transition: 0.3s;
+        }
+
+        nav ul li:hover::after {
+            width: 100%;
+        }
+
+        nav ul li:hover {
+            opacity: 1;
+        }
+
+        /* =========================
+           HERO SECTION
+        ========================== */
+        .hero {
+            height: 90vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .hero-content {
+            max-width: 750px;
+            animation: fadeUp 1.2s ease;
+        }
+
+        .hero h2 {
+            font-size: 52px;
+            font-weight: 600;
+            margin-bottom: 20px;
+            background: linear-gradient(90deg, #ffffff, #60a5fa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 18px;
+            opacity: 0.8;
+            margin-bottom: 35px;
+        }
+
+        .hero button {
+            padding: 14px 35px;
+            border: none;
+            border-radius: 30px;
+            background: linear-gradient(90deg, #60a5fa, #2563eb);
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            transition: 0.3s;
+            box-shadow: 0 10px 30px rgba(37,99,235,0.4);
+        }
+
+        .hero button:hover {
+            transform: translateY(-3px) scale(1.05);
+        }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(40px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* =========================
+           FEATURES
+        ========================== */
+        .features {
+            padding: 80px 60px;
+            text-align: center;
+        }
+
+        .features h3 {
+            font-size: 32px;
+            margin-bottom: 50px;
+        }
+
+        .card-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 30px;
+        }
+
+        .card {
+            backdrop-filter: blur(14px);
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 15px;
+            padding: 30px;
+            transition: 0.4s;
+            border: 1px solid rgba(255,255,255,0.12);
+        }
+
+        .card:hover {
+            transform: translateY(-10px) scale(1.02);
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .card h4 {
+            font-size: 20px;
+            margin-bottom: 12px;
+            color: #93c5fd;
+        }
+
+        .card p {
+            opacity: 0.75;
+            font-size: 14px;
+        }
+
+        /* =========================
+           FOOTER
+        ========================== */
+        footer {
+            margin-top: 50px;
+            padding: 25px;
+            text-align: center;
+            opacity: 0.6;
+            font-size: 14px;
+        }
+
+        /* =========================
+           RESPONSIVE
+        ========================== */
+        @media(max-width: 768px) {
+            nav {
+                flex-direction: column;
+                gap: 15px;
+                padding: 20px;
+            }
+
+            .hero h2 {
+                font-size: 34px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- =========================
+         BIOMETRIC ANIMATION CANVAS
+    ========================== -->
+    <canvas id="biometric-canvas"></canvas>
+
+    <!-- =========================
+         NAVBAR
+    ========================== -->
+    <nav>
+        <h1>Automated Emergency Treatment</h1>
+        <ul>
+            <li onclick="navigate('Home')">Home</li>
+            <li onclick="navigate('Registration')">Registration</li>
+            <li onclick="navigate('Login')">Login</li>
+			<li onclick="navigate('admin_login1')">Administrator</li>
+        </ul>
+    </nav>
+
+    <!-- =========================
+         HERO
+    ========================== -->
+    <section class="hero">
+        <div class="hero-content">
+            <h2>AI-Prioritized Management in Hospitals</h2>
+            <p>for Enhanced Security</p>
+            <button onclick="showMessage()">Explore Now</button>
+        </div>
+    </section>
+
+    <!-- =========================
+         FEATURES
+    ========================== -->
+    <section class="features">
+        <h3>Key Features</h3>
+
+        <div class="card-container">
+            <div class="card">
+                <h4>Biometric Security</h4>
+                <p>Fingerprint & face patterns integrated into animated background.</p>
+            </div>
+
+            <div class="card">
+                <h4>Glassmorphism UI</h4>
+                <p>Semi-transparent panels with blurred background for premium feel.</p>
+            </div>
+
+            <div class="card">
+                <h4>Dynamic Animations</h4>
+                <p>Particles and lines move across the biometric canvas for futuristic vibe.</p>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        © 2026 Futuristic Biometric Interface
+    </footer>
+
+    <!-- =========================
+         JAVASCRIPT
+    ========================== -->
+    <script>
+        // Alert buttons
+        function showMessage() {
+            alert("Welcome to the Futuristic Medico Assistance 🚀");
+        }
+
+        function navigate(page) {
+             window.location.href = page;
+        }
+
+        // =========================
+        // BIOMETRIC BACKGROUND ANIMATION
+        // =========================
+        const canvas = document.getElementById('biometric-canvas');
+        const ctx = canvas.getContext('2d');
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+
+        window.addEventListener('resize', () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        });
+
+        // Create particles (biometric circles)
+        const particles = [];
+        const particleCount = 80;
+
+        for(let i = 0; i < particleCount; i++) {
+            particles.push({
+                x: Math.random() * width,
+                y: Math.random() * height,
+                radius: Math.random() * 6 + 2,
+                speedX: (Math.random() - 0.5) * 0.8,
+                speedY: (Math.random() - 0.5) * 0.8,
+                opacity: Math.random() * 0.5 + 0.2
+            });
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, width, height);
+
+            // Draw biometric circles
+            for(let i = 0; i < particleCount; i++) {
+                const p = particles[i];
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI*2);
+                ctx.strokeStyle = `rgba(96,165,250,${p.opacity})`;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                // small connecting lines
+                for(let j = i+1; j < particleCount; j++) {
+                    const p2 = particles[j];
+                    const dx = p.x - p2.x;
+                    const dy = p.y - p2.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy);
+                    if(dist < 120) {
+                        ctx.beginPath();
+                        ctx.moveTo(p.x, p.y);
+                        ctx.lineTo(p2.x, p2.y);
+                        ctx.strokeStyle = `rgba(96,165,250,${(0.12 - dist/1000)})`;
+                        ctx.lineWidth = 1;
+                        ctx.stroke();
+                    }
+                }
+
+                p.x += p.speedX;
+                p.y += p.speedY;
+
+                if(p.x < 0 || p.x > width) p.speedX *= -1;
+                if(p.y < 0 || p.y > height) p.speedY *= -1;
+            }
+
+            requestAnimationFrame(draw);
+        }
+
+        draw();
+    </script>
+
+</body>
+</html>

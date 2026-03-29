@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI-Prioritized Management in Hospitals</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+<style>
+
+/* ========== GLOBAL ========== */
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:'Poppins', sans-serif;
+}
+
+body{
+    min-height:100vh;
+    background: linear-gradient(135deg, #0f172a, #0ea5e9, #14b8a6);
+    background-size:400% 400%;
+    animation: gradientMove 12s ease infinite;
+    color:white;
+    overflow-x:hidden;
+}
+
+@keyframes gradientMove{
+    0%{background-position:0% 50%;}
+    50%{background-position:100% 50%;}
+    100%{background-position:0% 50%;}
+}
+
+/* Floating medical icons */
+body::before{
+    content:"🩺 💊 🧬 🏥 💉 🫀";
+    position:fixed;
+    font-size:70px;
+    opacity:0.05;
+    width:100%;
+    height:100%;
+    display:flex;
+    justify-content:space-around;
+    align-items:center;
+    animation: floatIcons 18s ease-in-out infinite;
+    pointer-events:none;
+}
+
+@keyframes floatIcons{
+    0%{transform:translateY(0);}
+    50%{transform:translateY(-40px);}
+    100%{transform:translateY(0);}
+}
+
+/* ========== HEADER ========== */
+header{
+    backdrop-filter: blur(20px);
+    background: rgba(255,255,255,0.08);
+    padding:1rem 2rem;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    box-shadow:0 8px 32px rgba(0,0,0,0.2);
+}
+
+header h1{
+    font-size:22px;
+    font-weight:600;
+}
+
+/* Navigation Buttons */
+.nav-buttons{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+}
+
+.nav-buttons a{
+    text-decoration:none;
+    padding:8px 18px;
+    border-radius:30px;
+    font-size:14px;
+    background:rgba(255,255,255,0.15);
+    color:white;
+    transition:all 0.3s ease;
+}
+
+.nav-buttons a:hover{
+    background:#06b6d4;
+    transform:translateY(-3px);
+    box-shadow:0 5px 15px rgba(0,0,0,0.3);
+}
+
+.nav-buttons .logout{
+    background:#ef4444;
+}
+
+.nav-buttons .logout:hover{
+    background:#dc2626;
+}
+
+/* ========== MAIN SECTION ========== */
+main{
+    padding:60px 20px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+}
+
+/* Success Card */
+.success-box{
+    background:rgba(255,255,255,0.1);
+    backdrop-filter:blur(25px);
+    padding:40px;
+    border-radius:20px;
+    text-align:center;
+    width:100%;
+    max-width:500px;
+    box-shadow:0 15px 35px rgba(0,0,0,0.3);
+    animation:fadeIn 1.5s ease;
+}
+
+@keyframes fadeIn{
+    from{opacity:0; transform:translateY(20px);}
+    to{opacity:1; transform:translateY(0);}
+}
+
+.success-box h3{
+    font-size:20px;
+    margin-bottom:10px;
+    color:#facc15;
+}
+
+.success-box h2{
+    font-size:24px;
+    margin-bottom:10px;
+}
+
+.success-box p{
+    font-size:14px;
+    opacity:0.9;
+}
+
+.info{
+    margin-top:15px;
+    font-weight:600;
+    color:#fde047;
+}
+
+/* ECG Line */
+.ecg{
+    margin-top:50px;
+    width:100%;
+    max-width:600px;
+    height:80px;
+    position:relative;
+    overflow:hidden;
+}
+
+.ecg::before{
+    content:"";
+    position:absolute;
+    width:200%;
+    height:3px;
+    background:linear-gradient(to right, transparent 0%, #00ffcc 20%, #00ffcc 25%, transparent 30%);
+    animation:ecgMove 3s linear infinite;
+}
+
+@keyframes ecgMove{
+    0%{left:-100%;}
+    100%{left:0%;}
+}
+
+/* Responsive */
+@media(max-width:768px){
+    header{
+        flex-direction:column;
+        gap:10px;
+        text-align:center;
+    }
+}
+
+</style>
+</head>
+
+<body>
+
+<header>
+<h1>🩺 AI-Prioritized Management in Hospitals</h1>
+
+<div class="nav-buttons">
+    <a href="{{ url_for('appointments') }}">Appointments</a>
+    <a href="{{ url_for('medical') }}">Medical Chat</a>
+    <a href="{{ url_for('nutrition') }}">Nutrition AI</a>
+    <a href="{{ url_for('scan') }}">MRI Scan</a>
+
+    <a href="{{ url_for('logout') }}" class="logout">Logout</a>
+</div>
+</header>
+
+<main>
+
+<div class="success-box">
+    <h3>Welcome, {{ username }}!</h3>
+    <h2>✅ User Authorized Successfully</h2>
+    <p>Access Granted via Multimodal Biometric Verification</p>
+    <div class="info">
+        Confidence Score: {{ confidence | round(2) }}
+    </div>
+</div>
+
+<div class="ecg"></div>
+
+</main>
+
+</body>
+</html>

@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nutrition Analysis Dashboard</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<style>
+body {
+    font-family: 'Segoe UI', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+    background: linear-gradient(-45deg, #0ea5e9, #14b8a6, #22d3ee, #3b82f6);
+    background-size: 400% 400%;
+    animation: gradientMove 12s ease infinite;
+}
+
+@keyframes gradientMove {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* ===== Navigation Bar ===== */
+.navbar-custom {
+    background: rgba(255,255,255,0.2);
+    backdrop-filter: blur(12px);
+    padding: 12px 30px;
+}
+
+.navbar-custom a {
+    color: white;
+    text-decoration: none;
+    margin-right: 20px;
+    font-weight: 500;
+    transition: 0.3s;
+}
+
+.navbar-custom a:hover {
+    color: #ffe082;
+}
+
+.navbar-custom .logout {
+    background: #ff4d4d;
+    padding: 6px 15px;
+    border-radius: 20px;
+}
+
+.navbar-custom .logout:hover {
+    background: #cc0000;
+    color: white;
+}
+
+/* ===== Card Styling ===== */
+.card {
+    margin-top: 30px;
+    border-radius: 20px;
+    background: rgba(255,255,255,0.95);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+}
+
+#drop-zone {
+    border: 2px dashed #0d6efd;
+    border-radius: 15px;
+    padding: 30px;
+    text-align: center;
+    color: #6c757d;
+    cursor: pointer;
+    margin-bottom: 15px;
+    transition: all 0.3s ease;
+}
+
+#drop-zone.dragover {
+    background-color: #bae6fd;
+}
+
+.image-preview {
+    max-width: 300px;
+    max-height: 300px;
+    margin-bottom: 15px;
+    border-radius: 15px;
+    object-fit: cover;
+    display: none;
+}
+</style>
+</head>
+
+<body>
+
+<!-- ===== Navigation Menu ===== -->
+<nav class="navbar navbar-custom d-flex justify-content-between">
+    <div class="d-flex">
+        <a href="{{ url_for('appointments') }}">Appointments</a>
+        <a href="{{ url_for('medical') }}">Medical Chat</a>
+        <a href="{{ url_for('nutrition') }}">Nutrition AI</a>
+        <a href="{{ url_for('scan') }}">MRI Scan</a>
+    </div>
+    <div>
+        <a href="{{ url_for('logout') }}" class="logout">Logout</a>
+    </div>
+</nav>
+
+<div class="container">
+    <h1 class="text-center text-white my-4">🥗 Nutrition Analysis Dashboard</h1>
+
+    <div class="card p-4">
+
+        <!-- Drag Drop Zone -->
+        <div id="drop-zone">Drag & Drop Food Image Here<br>or Click to Browse</div>
+
+        <!-- Upload Form -->
+        <form id="upload-form" method="POST" action="/analyze_food" enctype="multipart/form-data">
+            <input type="file" id="file" name="file" class="form-control mb-3" style="display:none;" required>
+            <img id="preview-img" class="image-preview" alt="Preview">
+            <button type="submit" class="btn btn-primary w-100">Analyze</button>
+        </form>
+
+       {% if nutrition_r %}
+<pre id="nutrition-text" class="bg-light p-3 rounded" style="white-space: pre-wrap;">{{ nutrition_r }}</pre>
+
+  {% else %}
+        <p class="text-muted">Upload an image to see nutrition analysis.</p>
+        {% endif %}
+
+        <!-- BMI Calculator -->
+        <h4>BMI Calculator</h4>
+        <div class="row g-3 mb-3">
+            <div class="col-md-4">
+                <input type="number" id="weight" class="form-control" placeholder="Weight (kg)">
+            </div>
+            <div class="col-md-4">
+                <input type="number" id="height" class="form-control" placeholder="Height (cm)">
+            </div>
+            <div class="col-md-4">
+                <button class="btn btn-success w-100" type="button" onclick="calculateBMI()">Calculate BMI</button>
+            </div>
+        </div>
+        <p id="bmi-result"></p>
+
+        <button class="btn btn-warning mt-3 w-100" type="button" onclick="downloadPDF()">Download Nutrition PDF</button>
+
+    </div>
+</div>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+    const dropZone = document.getElementById("drop-zone");
+    const fileInput = document.getElementById("file");
+    const previewImg = document.getElementById("preview-img");
+
+    dropZone.onclick = function () {
+        fileInput.click();
+    };
+
+    ["dragenter", "dragover", "dragleave", "drop"].forEach(eventName => {
+        dropZone.addEventListener(eventName, e => {
+            e.preventDefault();
+            e.stopPropagation();
+        });
+    });
+
+    dropZone.addEventListener("dragover", () => {
+        dropZone.classList.add("dragover");
+    });
+
+    dropZone.addEventListener("dragleave", () => {
+        dropZone.classList.remove("dragover");
+    });
+
+    dropZone.addEventListener("drop", e => {
+        dropZone.classList.remove("dragover");
+
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            fileInput.files = files;
+            showPreview(files[0]);
+        }
+    });
+
+    fileInput.addEventListener("change", function () {
+        if (this.files.length > 0) {
+            showPreview(this.files[0]);
+        }
+    });
+
+    function showPreview(file) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            previewImg.src = e.target.result;
+            previewImg.style.display = "block";
+        };
+        reader.readAsDataURL(file);
+    }
+
+});
+
+// BMI Calculator
+function calculateBMI() {
+    const weight = document.getElementById("weight").value;
+    const height = document.getElementById("height").value;
+
+    if (!weight || !height) {
+        alert("Please enter weight and height");
+        return;
+    }
+
+    const bmi = weight / ((height / 100) ** 2);
+
+    let category = "";
+    if (bmi < 18.5) category = "Underweight";
+    else if (bmi < 25) category = "Normal weight";
+    else if (bmi < 30) category = "Overweight";
+    else category = "Obese";
+
+    document.getElementById("bmi-result").innerHTML =
+        `Your BMI is ${bmi.toFixed(2)} (${category})`;
+}
+
+// PDF Download
+function downloadPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    doc.text("Nutrition Report", 10, 10);
+
+    const bmiText = document.getElementById("bmi-result").innerText;
+    doc.text(bmiText, 10, 30);
+
+    doc.save("Nutrition_Report.pdf");
+}
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
