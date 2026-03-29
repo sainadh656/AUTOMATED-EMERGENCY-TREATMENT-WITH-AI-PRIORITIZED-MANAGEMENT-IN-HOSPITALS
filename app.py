@@ -846,7 +846,7 @@ UPLOAD_FOLDER = "models"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 # 🔑 Gemini API Key
-genai.configure(api_key="AIzaSyBvhGwRI94z8g-KBignyo1kn7GZIMJYFRk")
+genai.configure(api_key="")
 chat_model = genai.GenerativeModel("gemini-flash-latest")
 
 
